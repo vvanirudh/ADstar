@@ -17,6 +17,7 @@ It is part of the environment class (as the 3D grid cell)
 #include <stdlib.h>
 #include <limits>
 #include <math.h>
+//#include "adstar/key.h"
 
 using namespace std;
 
@@ -32,7 +33,8 @@ class State {
   int y;
   int z;
   bool visited, open, closed, inSolution, incons;
-  vector<double> k;
+  //keys k;
+  double k1, k2;
   State *succ, *succb;
   
   /** Empty constructor */
@@ -44,6 +46,7 @@ class State {
     visited = false;
     open = closed = incons = false;
     inSolution = false;
+    k1 = k2 = MAXVALUE;
   }
 
   /** Constructor with cost value */
@@ -55,6 +58,7 @@ class State {
     visited = false;
     open = closed = incons = false;
     inSolution = false;
+    k1 = k2 = MAXVALUE;
   }
 
   void printState() {

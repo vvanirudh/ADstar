@@ -37,9 +37,9 @@ int main() {
   /** Setting up the planner */
   
   //ADstar planner(xlen, ylen, zlen, xs, ys, zs, xg, yg, zg, epsilon_start);
-  ADstar planner(943, 657, 21, 400, 300, 3, 550, 350, 2, 10);
-  //planner.setSeed();
-  planner.setCosts(1,10);
+  ADstar planner(10, 10, 10, 1, 1, 1, 9, 9, 9, 10);
+  planner.setSeed();
+  planner.setCosts(1,2);
   //planner.readCosts(file);
   file.close();
 

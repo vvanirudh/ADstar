@@ -47,17 +47,21 @@ void ADstar::setCosts(int clo, int chigh) {
   env3D.randInitialize(clo, chigh);
 }
 
-vector<double> ADstar::key(State *s) {
-  vector<double> res;
+void ADstar::key(State *s) {
+  //vector<double> res;
   if(s->gval > s->rhsval) {
-    res.push_back(s->rhsval + epsilon*heuristic(start, s));
-    res.push_back(s->rhsval);
+    //res.push_back(s->rhsval + epsilon*heuristic(start, s));
+    s->k1 = s->rhsval + epsilon*heuristic(start, s);
+    //res.push_back(s->rhsval);
+    s->k2 = s->rhsval;
   }
   else {
-    res.push_back(s->gval + heuristic(start, s));
-    res.push_back(s->gval);
+    //res.push_back(s->gval + heuristic(start, s));
+    s->k1 = s->gval + heuristic(start, s);
+    //res.push_back(s->gval);
+    s->k2 = s->gval;
   }
-  return res;
+  //return res;
 }
 
 double ADstar::heuristic(State *s1, State *s2) {
@@ -86,12 +90,12 @@ void ADstar::updateState(State *s) {
 
   if(s->gval != s->rhsval) { // s is inconsistent
     if (!s->closed) { // s not in closed
-      s->k = key(s);
+      key(s);
       open.insert(s);
       s->open = true;
     }
     else { // s in closed
-      s->k = key(s);
+      key(s);
       incons.insert(s); // put it in incons
       s->incons = true;
     }
@@ -100,16 +104,20 @@ void ADstar::updateState(State *s) {
 
 void ADstar::computeOrImprovePath() {
   // TODO key evaluations done as needed. Should it be the priority instead? Verify
-  while ((key(*open.begin())[0] < key(start)[0]) || ((key(*open.begin())[0] == key(start)[0]) && (key(*open.begin())[1] < key(start)[1])) || (start->rhsval != start->gval)) {
+  
+  while (((*open.begin())->k1 < start->k1) || (((*open.begin())->k1 == start->k1) && ((*open.begin())->k2 < start->k2)) || (start->rhsval != start->gval)) {
+    
     State *s = *open.begin();
     open.erase(open.begin());
     s->open = false;
+    // DEBUG
+    //s->printState();
     //std::cout<<"("<<s->x<<","<<s->y<<","<<s->z<<")"<<std::endl;
 
     if(s->gval > s->rhsval) {
       s->succ = s->succb;
       s->gval = s->rhsval;
-      s->k = key(s);
+      key(s);
       closed.insert(s);
       s->closed = true;
       updateAllPredStates(s);
@@ -205,7 +213,7 @@ void ADstar::plan(bool print, ofstream& file) {
   epsilon = epsilon_start;
 
   open.clear(); closed.clear(); incons.clear();
-  goal->k = key(goal);
+  key(goal);
   //std::cout<<goal->k[0]<<" , "<<goal->k[1]<<std::endl;
   goal->visited = true;
   goal->open = true;
@@ -233,7 +241,7 @@ void ADstar::plan(bool print, ofstream& file) {
     // Move states from incons to open
     while(incons.size()!=0) {
       State *s = *incons.begin();
-      s->k = key(s);
+      key(s);
       s->open = true;
       open.insert(s);
       s->incons = false;
@@ -322,7 +330,7 @@ void ADstar::replan(bool print, ofstream& file) {
     // Move states from incons to open
   while(incons.size()!=0) {
     State *s = *incons.begin();
-    s->k = key(s);
+    key(s);
     s->open = true;
     open.insert(s);
     s->incons = false;

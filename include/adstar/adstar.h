@@ -6,6 +6,9 @@ Use environment and state classes
 
 **/
 
+#ifndef ADSTAR_ADSTAR_
+#define ADSTAR_ADSTAR_
+
 #include <iostream>
 #include <vector>
 #include <stdlib.h>
@@ -25,17 +28,19 @@ class ADstar {
   {
   public:
     bool operator() (State *s1, State *s2) {
-      vector<double> k1 = s1->k;
-      vector<double> k2 = s2->k;
+      double k11 = s1->k1;
+      double k12 = s1->k2;
+      double k21 = s2->k1;
+      double k22 = s2->k2;
       
-      if(k1[0] < k2[0]) {
+      if(k11 < k21) {
 	return true;
       }
-      else if (k2[0] < k1[0]) {
+      else if (k21 < k11) {
 	return false;
       }
       else { // k1[0] == k2[0]
-	if(k1[1] < k2[1]) {
+	if(k12 < k22) {
 	  return true;
 	}
 	else {
@@ -70,7 +75,7 @@ class ADstar {
   void readCosts (ifstream& file);
   
   /** Key function */
-  vector<double> key(State *s);
+  void key(State *s);
 
   /** Heuristic function */
   double heuristic(State *s1, State *s2);
@@ -108,3 +113,5 @@ class ADstar {
   /** Replan function */
   void replan(bool print, ofstream& file);
 };
+
+#endif
