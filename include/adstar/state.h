@@ -16,22 +16,24 @@ It is part of the environment class (as the 3D grid cell)
 #include <vector>
 #include <stdlib.h>
 #include <limits>
+#include <math.h>
 
 using namespace std;
 
-#define MAXVALUE 10000000
+#define MAXVALUE INFINITY
 
 class State {
  public:
   int cost;
-  int gval;
-  int hval;
-  int rhsval;
+  double gval;
+  double hval;
+  double rhsval;
   int x;
   int y;
   int z;
-  bool visited, open, closed, inSolution;
-  vector<int> k;
+  bool visited, open, closed, inSolution, incons;
+  vector<double> k;
+  State *succ, *succb;
   
   /** Empty constructor */
   State() {
@@ -40,7 +42,7 @@ class State {
     hval = 0;
     rhsval = MAXVALUE;
     visited = false;
-    open = closed = false;
+    open = closed = incons = false;
     inSolution = false;
   }
 
@@ -51,10 +53,13 @@ class State {
     hval = 0;
     rhsval = MAXVALUE;
     visited = false;
-    open = closed = false;
+    open = closed = incons = false;
     inSolution = false;
   }
 
+  void printState() {
+    std::cout<<"("<<x<<","<<y<<","<<z<<")";
+  }
   
 
   /*bool operator==(const State& other) {
@@ -66,4 +71,5 @@ class State {
     }*/
 
 };
+
 #endif

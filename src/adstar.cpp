@@ -1,12 +1,37 @@
+/**
+
+Author: Anirudh Vemula
+Date: 14th Jan 2016
+*/
+
+/** TODO
+ * Improve efficiency of minSucc and updatePred methods by only considering successors and predecessors
+ * Add replanning capabilities
+ */
+
+
 #include <iostream>
 #include <vector>
 #include <stdlib.h>
 #include "adstar/adstar.h"
 #include <limits>
 #include <cmath>
+#include <string>
+#include <stdio.h>
+#include <fstream>
 
 using namespace std;
 
+// For execution time measurements
+#include <sys/time.h>
+typedef unsigned long long timestamp_t;
+
+static timestamp_t get_timestamp() {
+  struct timeval now;
+  gettimeofday (&now, NULL);
+  return now.tv_usec + (timestamp_t)now.tv_sec * 1000000;
+}
+// End
 
 ADstar::ADstar(size_t xlen, size_t ylen, size_t zlen, int xs, int ys, int zs, int xg, int yg, int zg, double eps): env3D(xlen, ylen, zlen) {
   xstart = xs; ystart = ys; zstart = zs;
@@ -15,14 +40,15 @@ ADstar::ADstar(size_t xlen, size_t ylen, size_t zlen, int xs, int ys, int zs, in
   
   start = &env3D(xs, ys, zs);
   goal = &env3D(xg, yg, zg);
+  changed = false;
 }
 
 void ADstar::setCosts(int clo, int chigh) {
   env3D.randInitialize(clo, chigh);
 }
 
-vector<int> ADstar::key(State *s) {
-  vector<int> res;
+vector<double> ADstar::key(State *s) {
+  vector<double> res;
   if(s->gval > s->rhsval) {
     res.push_back(s->rhsval + epsilon*heuristic(start, s));
     res.push_back(s->rhsval);
@@ -34,7 +60,7 @@ vector<int> ADstar::key(State *s) {
   return res;
 }
 
-int ADstar::heuristic(State *s1, State *s2) {
+double ADstar::heuristic(State *s1, State *s2) {
   //return 0;
   int x1 = s1->x; int y1 = s1->y; int z1 = s1->z;
   int x2 = s2->x; int y2 = s2->y; int z2 = s2->z;
@@ -49,7 +75,7 @@ void ADstar::updateState(State *s) {
   }
 
   if(s != goal) { // s is not the goal state
-    s->rhsval = minSucc(s); // minimum one-step lookahead
+    s->rhsval = minSucc(s); // minimum one-step lookahead    
     //std::cout<<" rhs: "<<s->rhsval;
   }
 
@@ -67,6 +93,7 @@ void ADstar::updateState(State *s) {
     else { // s in closed
       s->k = key(s);
       incons.insert(s); // put it in incons
+      s->incons = true;
     }
   }
 }
@@ -80,28 +107,26 @@ void ADstar::computeOrImprovePath() {
     //std::cout<<"("<<s->x<<","<<s->y<<","<<s->z<<")"<<std::endl;
 
     if(s->gval > s->rhsval) {
+      s->succ = s->succb;
       s->gval = s->rhsval;
       s->k = key(s);
       closed.insert(s);
       s->closed = true;
-
       updateAllPredStates(s);
-      
     }
     else {
       s->gval = MAXVALUE;
       updateState(s);
-
       updateAllPredStates(s);
     }
   }
 }
 
 
-int ADstar::minSucc(State *s) {
+double ADstar::minSucc(State *s) {
   // Successors are treated same as neighbors. TODO verify
   int x = s->x; int y = s->y; int z = s->z;
-  int minVal = MAXVALUE;
+  double minVal = MAXVALUE;
 
   for (int i=-1; i<=1; i++) {
     for (int j=-1; j<=1; j++) {
@@ -113,12 +138,17 @@ int ADstar::minSucc(State *s) {
 	  continue;
 	}
 	State *s1 = &env3D(x+i, y+j, z+k);
+
+	//Doubtful stuff
+	if(s1->gval > s->gval) // Farther to goal than s. So must be predecessor
+	  continue;
 	
-	int lcost = motionCost(s, s1) + s1->gval;
+	double lcost = motionCost(s, s1) + s1->gval;
 	//if(s1==goal) cout<<"goal seen "<<lcost<<endl;
 	
 	if (minVal > lcost) {
 	  minVal = lcost;
+	  s->succb = s1;
 	  //std::cout<<"inside ~ "<<minVal<<endl;
 	}
       }
@@ -127,12 +157,19 @@ int ADstar::minSucc(State *s) {
   return minVal;
 }
 
-int ADstar::motionCost(State *s1, State *s2) {
-  return s1->cost + s2->cost;
+double ADstar::motionCost(State *s1, State *s2) {
+  //return s1->cost + s2->cost;
+  // TODO Need to include distance as well in the motion cost
+
+  int x1 = s1->x; int y1 = s1->y; int z1 = s1->z;
+  int x2 = s2->x; int y2 = s2->y; int z2 = s2->z;
+
+  double dist = sqrt(pow(x2-x1,2) + pow(y2-y1,2) + pow(z2-z1,2)); // Euclidean distance
+  return dist*(s1->cost + s2->cost);
 }
 
 void ADstar::updateAllPredStates(State *s) {
-  // Predecessors are treated same as neighbors. TODO verify
+  // Predecessors are treated same as neighbors. TODO verify. Slow
   int x = s->x; int y = s->y; int z = s->z;
 
   for (int i=-1; i<=1; i++) {
@@ -144,16 +181,24 @@ void ADstar::updateAllPredStates(State *s) {
 	if(x+i >= env3D.xlen || y+j >= env3D.ylen || z+k >= env3D.zlen || x+i < 0 || y+j < 0 || z+k < 0)
 	  continue;
 	State *s1 = &env3D(x+i, y+j, z+k);
+	
 	//std::cout<<"("<<s1->x<<","<<s1->y<<","<<s1->z<<")";
-	updateState(s1);
+	
+	// Doubtful stuff
+	if(s1->gval < s->gval) // Closer to goal than s. So must be successor state
+	  continue;
+	   	
+	updateState(s1); // Can probably check if the state is consistent. If so, then ditch updating it
       }
     }
   }
   //std::cout<<std::endl;
 }
 
-void ADstar::solve() {
-
+void ADstar::plan(bool print, ofstream& file) {
+  cout<<"Plan started"<<endl;
+  double secsTaken = 0;
+  timestamp_t t0 = get_timestamp();
   start->gval = start->rhsval = MAXVALUE;
   goal->gval = MAXVALUE;
   goal->rhsval = 0;
@@ -165,16 +210,23 @@ void ADstar::solve() {
   goal->visited = true;
   goal->open = true;
   open.insert(goal);
-
+  
   computeOrImprovePath();
   //std::cout<<open.size() <<" , "<<closed.size() <<" , "<<incons.size()<<std::endl;
   //std::cout<<start->gval<<" , "<<start->rhsval<< std::endl;
   //std::cout<<goal->gval<<" , "<<goal->rhsval<< std::endl;
   // A sub-optimal path already found
-  printPath(goal); // TODO implement this
-  std::cout<<std::endl;
+  std::cout<<"Epsilon value : "<<epsilon<<endl;
+  if(print)
+    printPath(start, file);
+  //printPathIneff(goal);
+  
   std::cout<<"Cost to go from start: "<<start->gval<<endl;
-
+  timestamp_t t1 = get_timestamp();
+  secsTaken = (t1 - t0)/1000000.0L;
+  std::cout<<"Time taken (in secs) : "<<secsTaken<<endl;
+  std::cout<<std::endl;
+  
   while(epsilon>1) {
     epsilon--; // Decrease epsilon
     env3D.resetAll();
@@ -184,7 +236,8 @@ void ADstar::solve() {
       s->k = key(s);
       s->open = true;
       open.insert(s);
-      incons.erase(incons.begin());
+      s->incons = false;
+      incons.erase(incons.begin());  
     }
 
     while(closed.size()!=0) {
@@ -192,23 +245,41 @@ void ADstar::solve() {
       s->closed = false;
       closed.erase(closed.begin());
     }
-    
+    cout<<"Start"<<endl;
     computeOrImprovePath();
     // Sub-optimal (or possibly optimal) path found again
-    printPath(goal);
-    std::cout<<std::endl;
+    std::cout<<"Epsilon value : "<<epsilon<<endl;
+    if(print)
+      printPath(start, file);
+    //printPathIneff(goal);
     std::cout<<"Cost to go from start: "<<start->gval<<endl;
-  }
+    t1 = get_timestamp();
+    secsTaken = (t1 - t0)/1000000.0L;
+    std::cout<<"Time taken (in secs) : "<<secsTaken<<endl;
+    std::cout<<std::endl;
+    //int a;
+    //cin>>a;
+    }
 }
 
-void ADstar::printPath(State *g) {
-  // print the current state
+void ADstar::printPath(State *g, ofstream& file) {
+  //std::cout<<"("<<g->x<<","<<g->y<<","<<g->z<<")"<<" "<<g->gval<<";";
+  file<<g->x<<" "<<g->y<<" "<<g->z<<std::endl;
+  if(g==goal)
+    return;
+  State *ms = g->succ;
+  if(ms!=NULL)
+    printPath(ms, file);
+}
+
+// TODO Incorrectly working. Not needed for now.
+void ADstar::printPathIneff(State *g) {
   g->inSolution = true;
-  std::cout<<"("<<g->x<<","<<g->y<<","<<g->z<<")"<<" ";
+  std::cout<<"("<<g->x<<","<<g->y<<","<<g->z<<")"<<" "<<g->gval<<";";
   if(g==start)
     return;
   int x = g->x; int y = g->y; int z = g->z;
-  int minVal = MAXVALUE;
+  double minVal = MAXVALUE;
   State *ms = NULL;
   for(int i=-1; i<=1; i++) {
     for(int j=-1; j<=1; j++) {
@@ -226,6 +297,65 @@ void ADstar::printPath(State *g) {
     }
   }
   if(ms!=NULL)
-    printPath(ms);
+    printPathIneff(ms);
 }
-// TODO reset functions to set all flags for all states to default values
+
+void ADstar::setSeed() {
+  env3D.setSeed();
+}
+
+void ADstar::changeCosts(double fraction) {
+  changedStates = env3D.changeCosts(fraction);
+  changed = true;
+}
+
+void ADstar::replan(bool print, ofstream& file) {
+  double secsTaken = 0;
+  timestamp_t t0 = get_timestamp();
+  std::cout<<"Number of changed states : "<<changedStates.size()<<endl;
+  for (int i=0; i<changedStates.size(); i++) {
+    updateState(changedStates[i]);
+  }
+
+  //while(epsilon>=1) {
+  env3D.resetAll();
+    // Move states from incons to open
+  while(incons.size()!=0) {
+    State *s = *incons.begin();
+    s->k = key(s);
+    s->open = true;
+    open.insert(s);
+    s->incons = false;
+    incons.erase(incons.begin());
+    
+  }
+  
+  while(closed.size()!=0) {
+    State *s = *closed.begin();
+    s->closed = false;
+    closed.erase(closed.begin());
+  }
+  
+  computeOrImprovePath();
+  // Sub-optimal (or possibly optimal) path found again
+  std::cout<<"Epsilon value : "<<epsilon<<endl;
+  if(print)
+    printPath(start, file);
+  //printPathIneff(goal);
+  std::cout<<std::endl;
+  std::cout<<"Cost to go from start: "<<start->gval<<endl;
+  timestamp_t t1 = get_timestamp();
+  secsTaken = (t1 - t0)/1000000.0L;
+  std::cout<<"Time taken (in secs) : "<<secsTaken<<endl;
+  //epsilon--;
+  //int a;
+  //cin>>a;
+  //}
+  
+  changed = false;
+  changedStates.clear();
+}
+
+void ADstar::readCosts(ifstream& file) {
+  env3D.readCosts(file);
+}

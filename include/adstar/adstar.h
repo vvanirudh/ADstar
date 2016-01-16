@@ -9,9 +9,10 @@ Use environment and state classes
 #include <iostream>
 #include <vector>
 #include <stdlib.h>
-#include "adstar/state.h"
+//#include "adstar/state.h"
 #include "adstar/environment.h"
 #include <set>
+#include <string>
 
 using namespace std;
 
@@ -24,8 +25,8 @@ class ADstar {
   {
   public:
     bool operator() (State *s1, State *s2) {
-      vector<int> k1 = s1->k;
-      vector<int> k2 = s2->k;
+      vector<double> k1 = s1->k;
+      vector<double> k2 = s2->k;
       
       if(k1[0] < k2[0]) {
 	return true;
@@ -52,6 +53,9 @@ class ADstar {
   Environment env3D;
   
   double epsilon, epsilon_start;
+
+  bool changed;
+  vector<State*> changedStates;
   
   //priority_queue<State, vector<State>, stateCompare> open, closed, incons;
   set<State*, stateCompare> open, closed, incons;
@@ -61,12 +65,15 @@ class ADstar {
 
   /** Set low cost and high cost values */
   void setCosts (int clo, int chigh);
+
+  /** Read costs from a file */
+  void readCosts (ifstream& file);
   
   /** Key function */
-  vector<int> key(State *s);
+  vector<double> key(State *s);
 
   /** Heuristic function */
-  int heuristic(State *s1, State *s2);
+  double heuristic(State *s1, State *s2);
 
   /** Update state function */
   void updateState(State *s);
@@ -74,19 +81,30 @@ class ADstar {
   /** ComputeOrImprovePath function */
   void computeOrImprovePath();
 
-  /** Main solve function */
-  void solve();
+  /** Main plan function */
+  void plan(bool print, ofstream& file);
 
   /** Min one-step lookahead search */
-  int minSucc(State *s);
+  double minSucc(State *s);
 
   /** Motion Cost to travel to s2 from s1 */
-  int motionCost(State *s1, State *s2);
+  double motionCost(State *s1, State *s2);
 
   /** Update all predecessor states */
   void updateAllPredStates(State *s);
 
   /** Prints the path */
-  void printPath(State *g);
+  void printPath(State *g, ofstream& file);
 
+  /** Prints the path. Inefficient version */
+  void printPathIneff(State *g);
+
+  /** Sets the seed for the random number generator */
+  void setSeed();
+
+  /** Changes costs of a given percentage of states */
+  void changeCosts(double fraction);
+
+  /** Replan function */
+  void replan(bool print, ofstream& file);
 };
