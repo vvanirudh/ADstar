@@ -75,7 +75,7 @@ class ADstar {
   void computeOrImprovePath();
 
   /** Main solve function */
-  void solve();
+  void solve(bool print);
 
   /** Min one-step lookahead search */
   int minSucc(State *s);

@@ -7,9 +7,10 @@ using namespace std;
 
 int main() {
 
-  ADstar planner(10, 10, 10, 1, 1, 1, 9, 9, 9, 10);
-  planner.setCosts(0,2);
+  ADstar planner(100, 100, 10, 1, 1, 1, 9, 9, 9, 10);
+  
+  planner.setCosts(500,20000);
 
-  planner.solve();
+  planner.solve(false);
   return 0;
 }

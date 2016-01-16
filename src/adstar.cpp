@@ -152,7 +152,7 @@ void ADstar::updateAllPredStates(State *s) {
   //std::cout<<std::endl;
 }
 
-void ADstar::solve() {
+void ADstar::solve(bool print) {
 
   start->gval = start->rhsval = MAXVALUE;
   goal->gval = MAXVALUE;
@@ -171,7 +171,9 @@ void ADstar::solve() {
   //std::cout<<start->gval<<" , "<<start->rhsval<< std::endl;
   //std::cout<<goal->gval<<" , "<<goal->rhsval<< std::endl;
   // A sub-optimal path already found
-  printPath(goal); // TODO implement this
+  std::cout<<"Epsilon value : "<<epsilon<<endl;
+  if(print)
+    printPath(goal); // TODO implement this
   std::cout<<std::endl;
   std::cout<<"Cost to go from start: "<<start->gval<<endl;
 
@@ -195,7 +197,9 @@ void ADstar::solve() {
     
     computeOrImprovePath();
     // Sub-optimal (or possibly optimal) path found again
-    printPath(goal);
+    std::cout<<"Epsilon value : "<<epsilon<<endl;
+    if(print)
+      printPath(goal);
     std::cout<<std::endl;
     std::cout<<"Cost to go from start: "<<start->gval<<endl;
   }
