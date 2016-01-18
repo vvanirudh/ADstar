@@ -17,11 +17,13 @@ It is part of the environment class (as the 3D grid cell)
 #include <stdlib.h>
 #include <limits>
 #include <math.h>
+#include <set>
 //#include "adstar/key.h"
 
 using namespace std;
 
-#define MAXVALUE INFINITY
+//#define MAXVALUE INFINITY
+#define MAXVALUE std::numeric_limits<double>::infinity()
 
 class State {
  public:
@@ -36,7 +38,7 @@ class State {
   //keys k;
   double k1, k2;
   State *succ, *succb;
-  
+  //std::set<State*>::iterator it_open, it_closed;
   /** Empty constructor */
   State() {
     cost = 0;

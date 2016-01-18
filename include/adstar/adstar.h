@@ -16,6 +16,8 @@ Use environment and state classes
 #include "adstar/environment.h"
 #include <set>
 #include <string>
+#include <list>
+#include <unordered_set>
 
 using namespace std;
 
@@ -52,7 +54,10 @@ class ADstar {
  
   int xstart, ystart, zstart; // start state
   int xgoal, ygoal, zgoal; // goal state
+  int chi, clo;
 
+  //std::pair<std::set<State*>::iterator, bool> ret;
+  
   State *start, *goal;
 
   Environment env3D;
@@ -63,7 +68,8 @@ class ADstar {
   vector<State*> changedStates;
   
   //priority_queue<State, vector<State>, stateCompare> open, closed, incons;
-  set<State*, stateCompare> open, closed, incons;
+  set<State*, stateCompare> open;
+  set<State*> closed, incons;
 
   /** Constructor */
   ADstar(size_t xlen, size_t ylen, size_t zlen, int xs, int ys, int zs, int xg, int yg, int zg, double eps);

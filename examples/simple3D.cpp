@@ -31,16 +31,17 @@ int main() {
 
   cout<<xlen<<" "<<ylen<<" "<<zlen<<" "<<xs<<" "<<ys<<" "<<zs<<" "<<xg<<" "<<yg<<" "<<zg<<endl;
 
-  int epsilon_start = 10;
+  int epsilon_start = 25;
   cout<<"Parameters read"<<endl;
 
   /** Setting up the planner */
   
-  //ADstar planner(xlen, ylen, zlen, xs, ys, zs, xg, yg, zg, epsilon_start);
-  ADstar planner(10, 10, 10, 1, 1, 1, 9, 9, 9, 10);
-  planner.setSeed();
-  planner.setCosts(1,2);
-  //planner.readCosts(file);
+  ADstar planner(xlen, ylen, zlen, xs, ys, zs, xg, yg, zg, epsilon_start);
+  //ADstar planner(100, 100, 100, 1, 1, 1, 99, 99, 99, 10);
+  //ADstar planner(5, 5, 1, 1, 1, 0, 4, 4, 0, 10);
+  //planner.setSeed();
+  //planner.setCosts(255,65535);
+  planner.readCosts(file);
   file.close();
 
 

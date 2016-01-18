@@ -44,6 +44,8 @@ ADstar::ADstar(size_t xlen, size_t ylen, size_t zlen, int xs, int ys, int zs, in
 }
 
 void ADstar::setCosts(int clo, int chigh) {
+  this->clo = clo;
+  this->chi = chigh;
   env3D.randInitialize(clo, chigh);
 }
 
@@ -69,7 +71,18 @@ double ADstar::heuristic(State *s1, State *s2) {
   int x1 = s1->x; int y1 = s1->y; int z1 = s1->z;
   int x2 = s2->x; int y2 = s2->y; int z2 = s2->z;
 
-  return sqrt(pow(x2-x1,2) + pow(y2-y1,2) + pow(z2-z1,2)); // Euclidean distance heuristic
+  //return sqrt(pow(x2-x1,2) + pow(y2-y1,2) + pow(z2-z1,2)); // Euclidean distance heuristic
+  //return 0;
+  double dx = abs(x2-x1); double dy = abs(y2-y1); double dz = abs(z2-z1);
+  double numDiagonalSteps = min(dz, min(dx, dy));
+  double manhattanDistance = dx + dy + dz;
+  double numStraightSteps = manhattanDistance - 3*numDiagonalSteps;
+  //return (numStraightSteps + numDiagonalSteps)*clo;
+  //return (abs(x2-x1) + abs(y2-y1) + abs(z2-z1))*clo;
+  //return 1;
+  //return (numStraightSteps + numDiagonalSteps);
+  double dx2 = dx*dx; double dy2 = dy*dy; double dz2 = dz*dz;
+  return (clo*sqrt(dx2+dy2+dz2)) - dx - dy - dz;
 }
 
 void ADstar::updateState(State *s) {
@@ -95,8 +108,9 @@ void ADstar::updateState(State *s) {
       s->open = true;
     }
     else { // s in closed
-      key(s);
+      //key(s);
       incons.insert(s); // put it in incons
+      //incons.push_back(s);
       s->incons = true;
     }
   }
@@ -105,20 +119,31 @@ void ADstar::updateState(State *s) {
 void ADstar::computeOrImprovePath() {
   // TODO key evaluations done as needed. Should it be the priority instead? Verify
   
-  while (((*open.begin())->k1 < start->k1) || (((*open.begin())->k1 == start->k1) && ((*open.begin())->k2 < start->k2)) || (start->rhsval != start->gval)) {
+  while (
+	 ((*open.begin())->k1 < start->k1) ||
+	 (((*open.begin())->k1 == start->k1) && ((*open.begin())->k2 < start->k2)) ||
+	 (start->rhsval != start->gval)
+	 )
+    {
     
     State *s = *open.begin();
+    /*if(!s->open) {
+      open.erase(open.begin());
+      continue;
+      }*/
     open.erase(open.begin());
     s->open = false;
     // DEBUG
     //s->printState();
+    //cout<<endl;
     //std::cout<<"("<<s->x<<","<<s->y<<","<<s->z<<")"<<std::endl;
 
     if(s->gval > s->rhsval) {
       s->succ = s->succb;
       s->gval = s->rhsval;
-      key(s);
+      //key(s);
       closed.insert(s);
+      //closed.push_back(s);
       s->closed = true;
       updateAllPredStates(s);
     }
@@ -173,7 +198,8 @@ double ADstar::motionCost(State *s1, State *s2) {
   int x2 = s2->x; int y2 = s2->y; int z2 = s2->z;
 
   double dist = sqrt(pow(x2-x1,2) + pow(y2-y1,2) + pow(z2-z1,2)); // Euclidean distance
-  return dist*(s1->cost + s2->cost);
+  return dist*(s1->cost + s2->cost); //STUPID CHANGE
+  //return s1->cost + s2->cost;
 }
 
 void ADstar::updateAllPredStates(State *s) {
@@ -194,9 +220,11 @@ void ADstar::updateAllPredStates(State *s) {
 	
 	// Doubtful stuff
 	if(s1->gval < s->gval) // Closer to goal than s. So must be successor state
-	  continue;
+	    continue;
 	   	
 	updateState(s1); // Can probably check if the state is consistent. If so, then ditch updating it
+	//s1->printState();
+	//cout<<s1->gval<<" "<<s1->rhsval<<" "<<s1->open<<" "<<s1->k1<<" "<<s1->k2<<endl;
       }
     }
   }
@@ -220,7 +248,8 @@ void ADstar::plan(bool print, ofstream& file) {
   open.insert(goal);
   
   computeOrImprovePath();
-  //std::cout<<open.size() <<" , "<<closed.size() <<" , "<<incons.size()<<std::endl;
+  cout<<"open, closed, incons:";
+  std::cout<<open.size() <<" , "<<closed.size() <<" , "<<incons.size()<<std::endl;
   //std::cout<<start->gval<<" , "<<start->rhsval<< std::endl;
   //std::cout<<goal->gval<<" , "<<goal->rhsval<< std::endl;
   // A sub-optimal path already found
@@ -238,21 +267,34 @@ void ADstar::plan(bool print, ofstream& file) {
   while(epsilon>1) {
     epsilon--; // Decrease epsilon
     env3D.resetAll();
-    // Move states from incons to open
+    // Move all states from open to incons
+    while(open.size()!=0) {
+      State *s = *open.begin();
+      s->open = false;
+      incons.insert(s);
+      //incons.push_back(s);
+      s->incons = false;
+      open.erase(open.begin());
+    }
+    
+    // Move states from incons to open with updated keys
     while(incons.size()!=0) {
       State *s = *incons.begin();
       key(s);
       s->open = true;
       open.insert(s);
       s->incons = false;
-      incons.erase(incons.begin());  
+      incons.erase(incons.begin());
+      //incons.pop_back();
     }
 
     while(closed.size()!=0) {
       State *s = *closed.begin();
       s->closed = false;
       closed.erase(closed.begin());
+      //closed.pop_back();
     }
+    
     cout<<"Start"<<endl;
     computeOrImprovePath();
     // Sub-optimal (or possibly optimal) path found again
@@ -271,8 +313,8 @@ void ADstar::plan(bool print, ofstream& file) {
 }
 
 void ADstar::printPath(State *g, ofstream& file) {
-  //std::cout<<"("<<g->x<<","<<g->y<<","<<g->z<<")"<<" "<<g->gval<<";";
-  file<<g->x<<" "<<g->y<<" "<<g->z<<std::endl;
+  std::cout<<"("<<g->x<<","<<g->y<<","<<g->z<<")"<<" "<<g->gval<<";";
+  //file<<g->x<<" "<<g->y<<" "<<g->z<<std::endl;
   if(g==goal)
     return;
   State *ms = g->succ;
@@ -327,7 +369,16 @@ void ADstar::replan(bool print, ofstream& file) {
 
   //while(epsilon>=1) {
   env3D.resetAll();
-    // Move states from incons to open
+  // Move all states from open to incons
+  while(open.size()!=0) {
+    State *s = *open.begin();
+    s->open = false;
+    incons.insert(s);
+    //incons.push_back(s);
+    s->incons = false;
+    open.erase(open.begin());
+  }
+  // Move states from incons to open
   while(incons.size()!=0) {
     State *s = *incons.begin();
     key(s);
@@ -365,5 +416,7 @@ void ADstar::replan(bool print, ofstream& file) {
 }
 
 void ADstar::readCosts(ifstream& file) {
+  clo = 255;
+  chi = 65535;
   env3D.readCosts(file);
 }

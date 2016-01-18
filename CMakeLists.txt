@@ -11,7 +11,7 @@ find_package(catkin REQUIRED COMPONENTS
 
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
-set(CMAKE_CXX_FLAGS "-frounding-math -pg")
+set(CMAKE_CXX_FLAGS "-frounding-math -pg -g -std=c++11")
 
 ## Uncomment this if the package has a setup.py. This macro ensures
 ## modules and global scripts declared therein get installed
