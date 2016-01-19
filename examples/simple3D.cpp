@@ -31,7 +31,7 @@ int main() {
 
   cout<<xlen<<" "<<ylen<<" "<<zlen<<" "<<xs<<" "<<ys<<" "<<zs<<" "<<xg<<" "<<yg<<" "<<zg<<endl;
 
-  int epsilon_start = 25;
+  int epsilon_start = 5;
   cout<<"Parameters read"<<endl;
 
   /** Setting up the planner */

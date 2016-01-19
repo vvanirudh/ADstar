@@ -41,6 +41,8 @@ ADstar::ADstar(size_t xlen, size_t ylen, size_t zlen, int xs, int ys, int zs, in
   start = &env3D(xs, ys, zs);
   goal = &env3D(xg, yg, zg);
   changed = false;
+  closed = new list<State*>();
+  incons = new list<State*>();
 }
 
 void ADstar::setCosts(int clo, int chigh) {
@@ -112,7 +114,7 @@ void ADstar::updateState(State *s) {
     else { // s in closed
       //key(s);
       if(!s->incons) {
-	incons.push_back(s);
+	incons->push_back(s);
 	//incons.insert(s);
 	s->incons = true;
       }
@@ -147,9 +149,9 @@ void ADstar::computeOrImprovePath() {
 	s->succ = s->succb;
 	s->gval = s->rhsval;
 	//key(s);
-	//closed.insert(s);
+	//closed->insert(s);
 	if(!s->closed) {
-	  closed.push_back(s);
+	  closed->push_back(s);
 	  //closed.insert(s);
 	  s->closed = true;
 	}
@@ -250,7 +252,7 @@ void ADstar::plan(bool print, ofstream& file) {
 
   //open.clear();
   //open.makeemptyheap();
-  closed.clear(); incons.clear();
+  closed->clear(); incons->clear();
   key(goal);
   //std::cout<<goal->k[0]<<" , "<<goal->k[1]<<std::endl;
   goal->visited = true;
@@ -260,7 +262,7 @@ void ADstar::plan(bool print, ofstream& file) {
   
   computeOrImprovePath();
   cout<<"open, closed, incons:";
-  std::cout<<open.size() <<" , "<<closed.size() <<" , "<<incons.size()<<std::endl;
+  std::cout<<open.size() <<" , "<<closed->size() <<" , "<<incons->size()<<std::endl;
   //std::cout<<start->gval<<" , "<<start->rhsval<< std::endl;
   //std::cout<<goal->gval<<" , "<<goal->rhsval<< std::endl;
   // A sub-optimal path already found
@@ -286,23 +288,25 @@ void ADstar::plan(bool print, ofstream& file) {
       State *s = open.getminheap();
       s->open = false;
       //incons.insert(s);
-      incons.push_back(s);
+      incons->push_back(s);
       s->incons = false;
       //open.erase(open.begin());
       open.eraseheap(s);
     }
     
     cout<<"Moving from incons to open with updated priorities"<<endl;
-    for(std::list<State*>::reverse_iterator rit = incons.rbegin(); rit!=incons.rend(); ++rit) {
+    for(std::list<State*>::reverse_iterator rit = incons->rbegin(); rit!=incons->rend(); ++rit) {
       State *s = *rit;
       key(s);
       s->open = true;
       open.insertheap(s);
-      s->incons = false;
+      //s->incons = false;
       //incons.pop_back();
       }
-
-    incons.clear();
+    
+    //incons->clear();
+    delete incons;
+    incons = new list<State*>();
     
     // Move states from incons to open with updated keys
     /*while(incons.size()!=0) {
@@ -320,11 +324,14 @@ void ADstar::plan(bool print, ofstream& file) {
       }*/
 
     cout<<"Clearing closed"<<endl;
-    for(std::list<State*>::reverse_iterator rit = closed.rbegin(); rit!=closed.rend(); ++rit) {
+    /*for(std::list<State*>::reverse_iterator rit = closed.rbegin(); rit!=closed.rend(); ++rit) {
       State *s = *rit;
       s->closed = false;
-      }
-    closed.clear();
+      }*/
+    
+    //closed->clear();
+    delete closed;
+    closed = new list<State*>();
     
     /*while(closed.size()!=0) {
       //State *s = *closed.begin();

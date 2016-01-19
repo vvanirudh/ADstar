@@ -72,7 +72,9 @@ class ADstar {
   //set<State*, stateCompare> open;
   MyHeap open;
   //set<State*> closed, incons;
-  list<State*> closed, incons;
+  list<State*> *closed, *incons;
+  //State** closed;
+  //State** incons;
 
   /** Constructor */
   ADstar(size_t xlen, size_t ylen, size_t zlen, int xs, int ys, int zs, int xg, int yg, int zg, double eps);

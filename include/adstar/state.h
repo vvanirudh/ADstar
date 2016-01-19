@@ -56,6 +56,8 @@ class State {
     k1 = k2 = MAXVALUE;
   }
 
+  ~State() {}
+
   /** Constructor with cost value */
   State(int c) {
     heapindex = 0;
