@@ -35,7 +35,7 @@ void Environment::randInitialize(int clo, int chi) {
       for (int k=0; k<zlen; k++) {
 	// STUPID CHANGE
 	//if(i==j)
-	  //cData[i+j*xlen+k*xlen*ylen].cost = chi;
+	//cData[i+j*xlen+k*xlen*ylen].cost = chi;
 	//else
 	cData[i+j*xlen+k*xlen*ylen].cost = rand()%(chi-clo+1) + clo;
 	//cData[i+j*xlen+k*xlen*ylen].cost = clo;

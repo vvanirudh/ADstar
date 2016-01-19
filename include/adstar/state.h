@@ -25,6 +25,7 @@ using namespace std;
 //#define MAXVALUE INFINITY
 #define MAXVALUE std::numeric_limits<double>::infinity()
 
+
 class State {
  public:
   int cost;
@@ -38,9 +39,13 @@ class State {
   //keys k;
   double k1, k2;
   State *succ, *succb;
+
+  int heapindex;
+  
   //std::set<State*>::iterator it_open, it_closed;
   /** Empty constructor */
   State() {
+    heapindex = 0;
     cost = 0;
     gval = MAXVALUE;
     hval = 0;
@@ -53,6 +58,7 @@ class State {
 
   /** Constructor with cost value */
   State(int c) {
+    heapindex = 0;
     cost = c;
     gval = MAXVALUE;
     hval = 0;

@@ -97,21 +97,25 @@ void ADstar::updateState(State *s) {
   }
 
   if(s->open) { // s in open
-    open.erase(s); // remove from open
+    //open.erase(s); // remove from open
+    open.eraseheap(s);
     s->open = false;
   }
 
   if(s->gval != s->rhsval) { // s is inconsistent
     if (!s->closed) { // s not in closed
       key(s);
-      open.insert(s);
+      //open.insert(s);
+      open.insertheap(s);
       s->open = true;
     }
     else { // s in closed
       //key(s);
-      incons.insert(s); // put it in incons
-      //incons.push_back(s);
-      s->incons = true;
+      if(!s->incons) {
+	incons.push_back(s);
+	//incons.insert(s);
+	s->incons = true;
+      }
     }
   }
 }
@@ -119,40 +123,44 @@ void ADstar::updateState(State *s) {
 void ADstar::computeOrImprovePath() {
   // TODO key evaluations done as needed. Should it be the priority instead? Verify
   
+  //while (
+  //	 ((*open.begin())->k1 < start->k1) ||
+  //	 (((*open.begin())->k1 == start->k1) && ((*open.begin())->k2 < start->k2)) ||
+  //	 (start->rhsval != start->gval)
+  //	 )
   while (
-	 ((*open.begin())->k1 < start->k1) ||
-	 (((*open.begin())->k1 == start->k1) && ((*open.begin())->k2 < start->k2)) ||
-	 (start->rhsval != start->gval)
-	 )
+  	 (open.size()!=0) &&
+  	 ((key_less(open.getminheap(), start)) ||
+  	  (start->rhsval != start->gval))
+  	 )
     {
     
-    State *s = *open.begin();
-    /*if(!s->open) {
-      open.erase(open.begin());
-      continue;
-      }*/
-    open.erase(open.begin());
-    s->open = false;
-    // DEBUG
-    //s->printState();
-    //cout<<endl;
-    //std::cout<<"("<<s->x<<","<<s->y<<","<<s->z<<")"<<std::endl;
-
-    if(s->gval > s->rhsval) {
-      s->succ = s->succb;
-      s->gval = s->rhsval;
-      //key(s);
-      closed.insert(s);
-      //closed.push_back(s);
-      s->closed = true;
-      updateAllPredStates(s);
+      //State *s = *open.begin();
+      State *s = open.getminheap();
+      //open.erase(open.begin());
+      open.eraseheap(s);
+      //open.deleteminheap();
+      s->open = false;
+      //s->printState();
+      //cout<<"Size of heap is : "<<open.size()<<endl;
+      if(s->gval > s->rhsval) {
+	s->succ = s->succb;
+	s->gval = s->rhsval;
+	//key(s);
+	//closed.insert(s);
+	if(!s->closed) {
+	  closed.push_back(s);
+	  //closed.insert(s);
+	  s->closed = true;
+	}
+	updateAllPredStates(s);
+      }
+      else {
+	s->gval = MAXVALUE;
+	updateState(s);
+	updateAllPredStates(s);
+      }
     }
-    else {
-      s->gval = MAXVALUE;
-      updateState(s);
-      updateAllPredStates(s);
-    }
-  }
 }
 
 
@@ -198,7 +206,7 @@ double ADstar::motionCost(State *s1, State *s2) {
   int x2 = s2->x; int y2 = s2->y; int z2 = s2->z;
 
   double dist = sqrt(pow(x2-x1,2) + pow(y2-y1,2) + pow(z2-z1,2)); // Euclidean distance
-  return dist*(s1->cost + s2->cost); //STUPID CHANGE
+  return dist*(s1->cost + s2->cost);
   //return s1->cost + s2->cost;
 }
 
@@ -240,12 +248,15 @@ void ADstar::plan(bool print, ofstream& file) {
   goal->rhsval = 0;
   epsilon = epsilon_start;
 
-  open.clear(); closed.clear(); incons.clear();
+  //open.clear();
+  //open.makeemptyheap();
+  closed.clear(); incons.clear();
   key(goal);
   //std::cout<<goal->k[0]<<" , "<<goal->k[1]<<std::endl;
   goal->visited = true;
   goal->open = true;
-  open.insert(goal);
+  //open.insert(goal);
+  open.insertheap(goal);
   
   computeOrImprovePath();
   cout<<"open, closed, incons:";
@@ -268,32 +279,60 @@ void ADstar::plan(bool print, ofstream& file) {
     epsilon--; // Decrease epsilon
     env3D.resetAll();
     // Move all states from open to incons
+    //cout<<"SIZE OF OPEN : "<<open.size()<<endl;
+    cout<<"Moving from open to incons"<<endl;
     while(open.size()!=0) {
-      State *s = *open.begin();
+      //State *s = *open.begin();
+      State *s = open.getminheap();
       s->open = false;
-      incons.insert(s);
-      //incons.push_back(s);
+      //incons.insert(s);
+      incons.push_back(s);
       s->incons = false;
-      open.erase(open.begin());
+      //open.erase(open.begin());
+      open.eraseheap(s);
     }
     
-    // Move states from incons to open with updated keys
-    while(incons.size()!=0) {
-      State *s = *incons.begin();
+    cout<<"Moving from incons to open with updated priorities"<<endl;
+    for(std::list<State*>::reverse_iterator rit = incons.rbegin(); rit!=incons.rend(); ++rit) {
+      State *s = *rit;
       key(s);
       s->open = true;
-      open.insert(s);
+      open.insertheap(s);
       s->incons = false;
-      incons.erase(incons.begin());
       //incons.pop_back();
-    }
+      }
 
-    while(closed.size()!=0) {
-      State *s = *closed.begin();
+    incons.clear();
+    
+    // Move states from incons to open with updated keys
+    /*while(incons.size()!=0) {
+      //State *s = *incons.begin();
+      State *s = incons.back();
+      key(s);
+      s->open = true;
+      //if(s->heapindex!=0)
+      //cout<<"State in incons and open!"<<endl;
+      //open.insert(s);
+      open.insertheap(s);
+      s->incons = false;
+      //incons.erase(incons.begin());
+      incons.pop_back();
+      }*/
+
+    cout<<"Clearing closed"<<endl;
+    for(std::list<State*>::reverse_iterator rit = closed.rbegin(); rit!=closed.rend(); ++rit) {
+      State *s = *rit;
       s->closed = false;
-      closed.erase(closed.begin());
-      //closed.pop_back();
-    }
+      }
+    closed.clear();
+    
+    /*while(closed.size()!=0) {
+      //State *s = *closed.begin();
+      State *s = closed.back();
+      s->closed = false;
+      //closed.erase(closed.begin());
+      closed.pop_back();
+      }*/
     
     cout<<"Start"<<endl;
     computeOrImprovePath();
@@ -359,7 +398,7 @@ void ADstar::changeCosts(double fraction) {
   changed = true;
 }
 
-void ADstar::replan(bool print, ofstream& file) {
+/*void ADstar::replan(bool print, ofstream& file) {
   double secsTaken = 0;
   timestamp_t t0 = get_timestamp();
   std::cout<<"Number of changed states : "<<changedStates.size()<<endl;
@@ -371,28 +410,35 @@ void ADstar::replan(bool print, ofstream& file) {
   env3D.resetAll();
   // Move all states from open to incons
   while(open.size()!=0) {
-    State *s = *open.begin();
+    //State *s = *open.begin();
+    State *s = open.getminheap();
     s->open = false;
-    incons.insert(s);
-    //incons.push_back(s);
+    //incons.insert(s);
+    incons.push_back(s);
     s->incons = false;
-    open.erase(open.begin());
+    //open.erase(open.begin());
+    open.eraseheap(s);
   }
   // Move states from incons to open
   while(incons.size()!=0) {
-    State *s = *incons.begin();
+    //State *s = *incons.begin();
+    State *s = incons.back();
     key(s);
     s->open = true;
-    open.insert(s);
+    //open.insert(s);
+    open.insertheap(s);
     s->incons = false;
-    incons.erase(incons.begin());
+    //incons.erase(incons.begin());
+    incons.pop_back();
     
   }
   
   while(closed.size()!=0) {
-    State *s = *closed.begin();
+    //State *s = *closed.begin();
+    State *s = closed.back();
     s->closed = false;
-    closed.erase(closed.begin());
+    //closed.erase(closed.begin());
+    closed.pop_back();
   }
   
   computeOrImprovePath();
@@ -413,7 +459,7 @@ void ADstar::replan(bool print, ofstream& file) {
   
   changed = false;
   changedStates.clear();
-}
+  }*/
 
 void ADstar::readCosts(ifstream& file) {
   clo = 255;

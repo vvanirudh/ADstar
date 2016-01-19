@@ -12,12 +12,13 @@ Use environment and state classes
 #include <iostream>
 #include <vector>
 #include <stdlib.h>
-//#include "adstar/state.h"
+#include "adstar/state.h"
 #include "adstar/environment.h"
 #include <set>
 #include <string>
 #include <list>
 #include <unordered_set>
+#include "adstar/myheap.h"
 
 using namespace std;
 
@@ -68,8 +69,10 @@ class ADstar {
   vector<State*> changedStates;
   
   //priority_queue<State, vector<State>, stateCompare> open, closed, incons;
-  set<State*, stateCompare> open;
-  set<State*> closed, incons;
+  //set<State*, stateCompare> open;
+  MyHeap open;
+  //set<State*> closed, incons;
+  list<State*> closed, incons;
 
   /** Constructor */
   ADstar(size_t xlen, size_t ylen, size_t zlen, int xs, int ys, int zs, int xg, int yg, int zg, double eps);
@@ -117,7 +120,7 @@ class ADstar {
   void changeCosts(double fraction);
 
   /** Replan function */
-  void replan(bool print, ofstream& file);
+  //void replan(bool print, ofstream& file);
 };
 
 #endif
