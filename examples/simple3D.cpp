@@ -31,7 +31,7 @@ int main() {
 
   cout<<xlen<<" "<<ylen<<" "<<zlen<<" "<<xs<<" "<<ys<<" "<<zs<<" "<<xg<<" "<<yg<<" "<<zg<<endl;
 
-  int epsilon_start = 5;
+  int epsilon_start = 10;
   cout<<"Parameters read"<<endl;
 
   /** Setting up the planner */
@@ -49,7 +49,7 @@ int main() {
   
   /** Planning */
   ofstream ofile;
-  ofile.open("/home/anirudh/catkin_ws/data/path_adstar.txt", std::ofstream::out);
+  ofile.open("/home/anirudh/catkin_ws/data/adstar/path_adstar.txt", std::ofstream::out);
   planner.plan(false, ofile);
   ofile.close();
   cout<<endl;

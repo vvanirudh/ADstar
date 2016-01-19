@@ -79,6 +79,8 @@ class ADstar {
   /** Constructor */
   ADstar(size_t xlen, size_t ylen, size_t zlen, int xs, int ys, int zs, int xg, int yg, int zg, double eps);
 
+  ~ADstar();
+
   /** Set low cost and high cost values */
   void setCosts (int clo, int chigh);
 

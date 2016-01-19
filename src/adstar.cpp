@@ -45,6 +45,10 @@ ADstar::ADstar(size_t xlen, size_t ylen, size_t zlen, int xs, int ys, int zs, in
   incons = new list<State*>();
 }
 
+ADstar::~ADstar() {
+  delete closed, incons;
+}
+
 void ADstar::setCosts(int clo, int chigh) {
   this->clo = clo;
   this->chi = chigh;
@@ -267,14 +271,20 @@ void ADstar::plan(bool print, ofstream& file) {
   //std::cout<<goal->gval<<" , "<<goal->rhsval<< std::endl;
   // A sub-optimal path already found
   std::cout<<"Epsilon value : "<<epsilon<<endl;
-  if(print)
+  if(print) {
+    file<<"Epsilon value : "<<epsilon<<endl;
     printPath(start, file);
+  }
   //printPathIneff(goal);
   
   std::cout<<"Cost to go from start: "<<start->gval<<endl;
   timestamp_t t1 = get_timestamp();
   secsTaken = (t1 - t0)/1000000.0L;
   std::cout<<"Time taken (in secs) : "<<secsTaken<<endl;
+  if(print) {
+    file<<"Time taken : "<<secsTaken<<endl;
+    file<<endl;
+  }
   std::cout<<std::endl;
   
   while(epsilon>1) {
@@ -345,13 +355,19 @@ void ADstar::plan(bool print, ofstream& file) {
     computeOrImprovePath();
     // Sub-optimal (or possibly optimal) path found again
     std::cout<<"Epsilon value : "<<epsilon<<endl;
-    if(print)
+    if(print) {
+      file<<"Epsilon value : "<<epsilon<<endl;
       printPath(start, file);
+    }
     //printPathIneff(goal);
     std::cout<<"Cost to go from start: "<<start->gval<<endl;
     t1 = get_timestamp();
     secsTaken = (t1 - t0)/1000000.0L;
     std::cout<<"Time taken (in secs) : "<<secsTaken<<endl;
+    if(print) {
+      file<<"Time taken : "<<secsTaken<<endl;
+      file<<endl;
+    }
     std::cout<<std::endl;
     //int a;
     //cin>>a;
@@ -359,8 +375,8 @@ void ADstar::plan(bool print, ofstream& file) {
 }
 
 void ADstar::printPath(State *g, ofstream& file) {
-  std::cout<<"("<<g->x<<","<<g->y<<","<<g->z<<")"<<" "<<g->gval<<";";
-  //file<<g->x<<" "<<g->y<<" "<<g->z<<std::endl;
+  //std::cout<<"("<<g->x<<","<<g->y<<","<<g->z<<")"<<" "<<g->gval<<";";
+  file<<g->x<<" "<<g->y<<" "<<g->z<<std::endl;
   if(g==goal)
     return;
   State *ms = g->succ;
