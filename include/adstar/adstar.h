@@ -17,8 +17,9 @@ Use environment and state classes
 #include <set>
 #include <string>
 #include <list>
-#include <unordered_set>
+//#include <unordered_set>
 #include "adstar/myheap.h"
+#include "adstar/mylist.h"
 
 using namespace std;
 
@@ -71,11 +72,10 @@ class ADstar {
   //priority_queue<State, vector<State>, stateCompare> open, closed, incons;
   //set<State*, stateCompare> open;
   MyHeap open;
-  //set<State*> closed, incons;
-  list<State*> *closed, *incons;
-  //State** closed;
-  //State** incons;
-
+  
+  //list<State*> *incons;
+  MyList incons;
+  
   /** Constructor */
   ADstar(size_t xlen, size_t ylen, size_t zlen, int xs, int ys, int zs, int xg, int yg, int zg, double eps);
 

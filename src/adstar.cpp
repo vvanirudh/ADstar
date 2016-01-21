@@ -41,12 +41,12 @@ ADstar::ADstar(size_t xlen, size_t ylen, size_t zlen, int xs, int ys, int zs, in
   start = &env3D(xs, ys, zs);
   goal = &env3D(xg, yg, zg);
   changed = false;
-  closed = new list<State*>();
-  incons = new list<State*>();
+  //closed = new list<State*>();
+  //incons = new list<State*>();
 }
 
 ADstar::~ADstar() {
-  delete closed, incons;
+  //delete incons;
 }
 
 void ADstar::setCosts(int clo, int chigh) {
@@ -118,8 +118,8 @@ void ADstar::updateState(State *s) {
     else { // s in closed
       //key(s);
       if(!s->incons) {
-	incons->push_back(s);
-	//incons.insert(s);
+	//incons->push_back(s);
+	incons.insert(s);
 	s->incons = true;
       }
     }
@@ -155,7 +155,7 @@ void ADstar::computeOrImprovePath() {
 	//key(s);
 	//closed->insert(s);
 	if(!s->closed) {
-	  closed->push_back(s);
+	  //closed->push_back(s);
 	  //closed.insert(s);
 	  s->closed = true;
 	}
@@ -256,7 +256,8 @@ void ADstar::plan(bool print, ofstream& file) {
 
   //open.clear();
   //open.makeemptyheap();
-  closed->clear(); incons->clear();
+  //closed->clear();
+  incons.clear();
   key(goal);
   //std::cout<<goal->k[0]<<" , "<<goal->k[1]<<std::endl;
   goal->visited = true;
@@ -266,13 +267,13 @@ void ADstar::plan(bool print, ofstream& file) {
   
   computeOrImprovePath();
   cout<<"open, closed, incons:";
-  std::cout<<open.size() <<" , "<<closed->size() <<" , "<<incons->size()<<std::endl;
+  std::cout<<open.size() <<" , "<<incons.size()<<std::endl;
   //std::cout<<start->gval<<" , "<<start->rhsval<< std::endl;
   //std::cout<<goal->gval<<" , "<<goal->rhsval<< std::endl;
   // A sub-optimal path already found
   std::cout<<"Epsilon value : "<<epsilon<<endl;
   if(print) {
-    file<<"Epsilon value : "<<epsilon<<endl;
+    file<<"Epsilon : "<<epsilon<<endl;
     printPath(start, file);
   }
   //printPathIneff(goal);
@@ -282,13 +283,13 @@ void ADstar::plan(bool print, ofstream& file) {
   secsTaken = (t1 - t0)/1000000.0L;
   std::cout<<"Time taken (in secs) : "<<secsTaken<<endl;
   if(print) {
-    file<<"Time taken : "<<secsTaken<<endl;
+    file<<"Time : "<<secsTaken<<endl;
     file<<endl;
   }
   std::cout<<std::endl;
   
   while(epsilon>1) {
-    epsilon--; // Decrease epsilon
+    epsilon = epsilon-5; // Decrease epsilon
     env3D.resetAll();
     // Move all states from open to incons
     //cout<<"SIZE OF OPEN : "<<open.size()<<endl;
@@ -297,26 +298,34 @@ void ADstar::plan(bool print, ofstream& file) {
       //State *s = *open.begin();
       State *s = open.getminheap();
       s->open = false;
-      //incons.insert(s);
-      incons->push_back(s);
+      incons.insert(s);
+      //incons->push_back(s);
       s->incons = false;
       //open.erase(open.begin());
       open.eraseheap(s);
     }
     
     cout<<"Moving from incons to open with updated priorities"<<endl;
-    for(std::list<State*>::reverse_iterator rit = incons->rbegin(); rit!=incons->rend(); ++rit) {
+    /*for(std::list<State*>::reverse_iterator rit = incons->rbegin(); rit!=incons->rend(); ++rit) {
       State *s = *rit;
       key(s);
       s->open = true;
       open.insertheap(s);
       //s->incons = false;
       //incons.pop_back();
-      }
+      }*/
+
+    int inc_size = incons.size();
+    for (int i=0; i<inc_size; i++) {
+      State *s = incons.remove();
+      key(s);
+      s->open = true;
+      open.insertheap(s);
+    }
     
-    //incons->clear();
-    delete incons;
-    incons = new list<State*>();
+    incons.clear();
+    //delete incons;
+    //incons = new list<State*>();
     
     // Move states from incons to open with updated keys
     /*while(incons.size()!=0) {
@@ -340,8 +349,8 @@ void ADstar::plan(bool print, ofstream& file) {
       }*/
     
     //closed->clear();
-    delete closed;
-    closed = new list<State*>();
+    //delete closed;
+    //closed = new list<State*>();
     
     /*while(closed.size()!=0) {
       //State *s = *closed.begin();
@@ -356,7 +365,7 @@ void ADstar::plan(bool print, ofstream& file) {
     // Sub-optimal (or possibly optimal) path found again
     std::cout<<"Epsilon value : "<<epsilon<<endl;
     if(print) {
-      file<<"Epsilon value : "<<epsilon<<endl;
+      file<<"Epsilon : "<<epsilon<<endl;
       printPath(start, file);
     }
     //printPathIneff(goal);
@@ -365,7 +374,7 @@ void ADstar::plan(bool print, ofstream& file) {
     secsTaken = (t1 - t0)/1000000.0L;
     std::cout<<"Time taken (in secs) : "<<secsTaken<<endl;
     if(print) {
-      file<<"Time taken : "<<secsTaken<<endl;
+      file<<"Time : "<<secsTaken<<endl;
       file<<endl;
     }
     std::cout<<std::endl;
