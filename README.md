@@ -7,5 +7,7 @@ After many failed searches for a publicly available neat implementation of the a
 
 Note that the implementation is written for planning on a 3-dimensional grid world. You can use it for 2-dimensional planning by restricting the Z-dimension to have a size of 1 (duh)
 
+Can be improved by using a more informed heuristic like 2D-A*.
+
 
 **Author** : Anirudh Vemula
