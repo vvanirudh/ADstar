@@ -65,6 +65,8 @@ class ADstar {
   Environment env3D;
   
   double epsilon, epsilon_start;
+  int step_size;
+  bool dec_epsilon;
 
   bool changed;
   vector<State*> changedStates;
@@ -124,7 +126,13 @@ class ADstar {
   void changeCosts(double fraction);
 
   /** Replan function */
-  //void replan(bool print, ofstream& file);
+  void replan(bool print, ofstream& file);
+
+  /** Set step size for epsilon */
+  void setStepSize(int step_size);
+
+  /** Set flag for whether epsilon should be decreased or not */
+  void setDecEpsilon(bool dec_eps);
 };
 
 #endif
